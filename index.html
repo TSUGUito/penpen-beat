@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ペンペンビート! | PENPEN BEAT!</title>
+<meta name="description" content="ペンペンと遊ぶブラウザ音ゲー。インストール不要、開いた3秒後にプレイ!">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --sky:#3FB6E8; --sky-deep:#1E93C9; --sky-dark:#177AA9;
+  --cloud:#D8E9F2; --scarf:#E8402E;
+  --beak:#F5C531; --gold:#FFB937; --gold-deep:#E8960F;
+  --navy:#33465A; --paper:#FFFDF7;
+  --lane1:#FF8FA3; --lane2:#7ED6A5; --lane3:#8EC9FF; --lane4:#FFC24B;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+body{
+  font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic UI","Meiryo",system-ui,sans-serif;
+  color:var(--navy);
+  transition:background .6s;
+}
+/* ===== 背景テーマ(タイトル=チェッカー柄/曲別=世界観) ===== */
+body.bg-title{
+  background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.10) 0 22px, rgba(255,255,255,0) 22px 44px),
+    linear-gradient(180deg,#4FBEEE 0%, #7FD2F4 100%);
+}
+body.bg-town{
+  background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.10) 0 22px, rgba(255,255,255,0) 22px 44px),
+    radial-gradient(circle at 82% 10%, rgba(255,224,110,.85) 0 58px, rgba(255,224,110,.25) 100px, transparent 101px),
+    linear-gradient(180deg,#A8E6B8 0%, #D7F5DE 55%, #FFF7DE 100%);
+}
+body.bg-theme{
+  background:
+    radial-gradient(ellipse 100px 36px at 18% 20%, #fff 0 60%, transparent 61%),
+    radial-gradient(ellipse 130px 44px at 78% 32%, rgba(255,255,255,.95) 0 60%, transparent 61%),
+    radial-gradient(ellipse 84px 30px at 52% 10%, rgba(255,255,255,.85) 0 60%, transparent 61%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,.07) 0 22px, rgba(255,255,255,0) 22px 44px),
+    linear-gradient(180deg,#9AD7F5 0%, #C8EAFB 55%, #FFF3D8 100%);
+}
+body.bg-lastboss{
+  color:#F4EFF7;
+  background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.04) 0 22px, rgba(255,255,255,0) 22px 44px),
+    radial-gradient(circle at 50% 118%, rgba(255,90,60,.6) 0 26%, rgba(232,64,46,.2) 46%, transparent 60%),
+    linear-gradient(180deg,#2A2140 0%, #40254E 55%, #5A2740 100%);
+}
+body.bg-medley{ /* 戦闘:燃える夕焼けの決闘 */
+  background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.10) 0 22px, rgba(255,255,255,0) 22px 44px),
+    radial-gradient(circle at 50% 116%, rgba(255,110,60,.6) 0 24%, rgba(255,150,80,.25) 44%, transparent 58%),
+    linear-gradient(180deg,#FFC96B 0%, #FF9E62 55%, #E86A4E 100%);
+}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:14px;text-align:center;transition:opacity .35s;overflow-y:auto}
+.hidden{opacity:0;pointer-events:none}
+
+/* ===== メインパネル(白の大きな角丸ボード) ===== */
+.panel{
+  background:var(--paper);
+  border:4px solid #fff;
+  border-radius:28px;
+  box-shadow:0 8px 0 rgba(23,90,130,.28), 0 0 0 3px rgba(23,90,130,.12);
+  padding:16px 16px 18px;
+  display:flex;flex-direction:column;gap:11px;align-items:center;
+  max-width:min(94vw,720px);
+  color:var(--navy);
+}
+
+/* タイトルロゴ(画像) */
+.title-logo{
+  width:min(90vw,520px);max-height:34vh;object-fit:contain;
+  filter:drop-shadow(0 6px 0 rgba(23,90,130,.28));
+  animation:logoWobble 3.2s ease-in-out infinite;
+}
+@keyframes logoWobble{0%,100%{transform:rotate(-1.1deg) translateY(0)}50%{transform:rotate(1.1deg) translateY(-4px)}}
+
+/* リボン風ラベル */
+.select-label{
+  font-size:12px;font-weight:800;letter-spacing:.28em;color:#fff;
+  background:linear-gradient(180deg,#4FC0EE,var(--sky-deep));
+  border-radius:999px;padding:4px 26px;
+  box-shadow:0 3px 0 var(--sky-dark), inset 0 2px 0 rgba(255,255,255,.5);
+}
+
+/* ツヤありボタン(丸文字フォント) */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  font-family:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN",sans-serif;
+  font-weight:800;font-size:18px;color:#fff;
+  background:linear-gradient(180deg,#FF8A62 0%,var(--scarf) 55%,#D53422 100%);
+  border-radius:999px;padding:13px 46px;
+  box-shadow:0 5px 0 #A82417, inset 0 3px 0 rgba(255,255,255,.5);
+  text-shadow:0 1.5px 0 rgba(0,0,0,.18);
+  transition:transform .08s, box-shadow .08s}
+
+/* セクションラベル(ステッカー画像) */
+.label-img{height:36px;max-width:60vw;object-fit:contain;
+  filter:drop-shadow(0 3px 0 rgba(23,90,130,.25))}
+
+/* ステージ背景ムービー(ボスバトル/街並み) */
+#stage-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  z-index:0;opacity:.55;filter:brightness(.55) saturate(1.15);
+  pointer-events:none;display:none}
+#game.video-mode #stage-bg{display:block}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 #A82417, inset 0 3px 0 rgba(255,255,255,.5)}
+.btn.ghost{background:linear-gradient(180deg,#FFFFFF,#E9F3F9);color:var(--sky-deep);
+  box-shadow:0 5px 0 #B8CEDC, inset 0 2px 0 #fff;text-shadow:none}
+.btn.ghost:active{box-shadow:0 1px 0 #B8CEDC, inset 0 2px 0 #fff}
+.btn[disabled]{opacity:.5;pointer-events:none}
+
+/* ===== 曲カード(タイル+金枠✓選択) ===== */
+.song-row{display:grid;grid-template-columns:repeat(2,minmax(130px,164px));gap:14px;justify-content:center}
+@media(min-width:720px){.song-row{grid-template-columns:repeat(4,150px)}}
+.song{position:relative;padding:0;background:none;transition:transform .12s}
+.song .s-btn{width:100%;display:block;filter:drop-shadow(0 4px 0 rgba(23,90,130,.22))}
+.song:hover{transform:translateY(-4px) rotate(-1.2deg)}
+.song:active{transform:scale(.94)}
+.song.sel .s-btn{
+  filter:drop-shadow(0 4px 0 var(--gold-deep)) drop-shadow(0 0 10px rgba(255,185,55,.95));
+}
+.song.sel::after{
+  content:"✓";position:absolute;top:-8px;right:-4px;width:28px;height:28px;
+  background:linear-gradient(180deg,#FFD34D,var(--gold));
+  border:3px solid #fff;border-radius:50%;
+  color:#fff;font-weight:800;font-size:15px;line-height:22px;
+  box-shadow:0 2px 0 var(--gold-deep);z-index:2;
+}
+.song.previewing .s-btn{animation:btnDance .45s ease-in-out infinite}
+@keyframes btnDance{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg) translateY(-3px)}}
+
+/* ===== 難易度(星の数のみ・文字なし) ===== */
+.diff-row{display:flex;gap:11px;flex-wrap:wrap;justify-content:center}
+.diff{width:110px;padding:12px 0;border-radius:20px;background:#fff;
+  box-shadow:0 4px 0 rgba(23,90,130,.18), 0 0 0 3px #EAF2F8 inset;
+  transition:transform .1s;position:relative}
+.diff:active{transform:scale(.95)}
+.d-stars{display:flex;gap:5px;justify-content:center;align-items:center;min-height:26px}
+.d-stars img{width:24px;height:24px;object-fit:contain;filter:drop-shadow(0 2px 0 rgba(23,90,130,.18))}
+.diff.sel{
+  background:#FFFBEA;
+  box-shadow:0 4px 0 var(--gold-deep), 0 0 0 4px var(--gold);
+}
+.diff.sel .d-stars img{animation:starPop .5s ease-out 1}
+@keyframes starPop{0%{transform:scale(.5)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
+.diff.sel::after{
+  content:"✓";position:absolute;top:-10px;right:-8px;width:24px;height:24px;
+  background:linear-gradient(180deg,#FFD34D,var(--gold));
+  border:3px solid #fff;border-radius:50%;
+  color:#fff;font-weight:800;font-size:13px;line-height:18px;
+  box-shadow:0 2px 0 var(--gold-deep);
+}
+
+.howto{font-size:11.5px;font-weight:700;line-height:1.8;background:#F2FAFF;border-radius:14px;padding:7px 16px;color:var(--navy)}
+.howto b{color:var(--scarf)}
+.bgm-credit{font-size:10.5px;font-weight:800;color:#fff;opacity:.85;text-shadow:0 1px 0 rgba(23,90,130,.4)}
+
+/* 浮遊音符 */
+.float-note{position:fixed;font-size:22px;opacity:.5;color:#fff;pointer-events:none;animation:floatUp linear infinite;z-index:0;text-shadow:0 2px 0 rgba(23,90,130,.25)}
+@keyframes floatUp{0%{transform:translateY(105vh) rotate(-10deg)}100%{transform:translateY(-10vh) rotate(14deg)}}
+#scr-title>*{z-index:1}
+
+/* ===== ゲーム画面 ===== */
+#game{display:block;padding:0}
+#hud{position:absolute;top:0;left:0;right:0;z-index:5;display:flex;justify-content:space-between;align-items:flex-start;padding:10px 12px;pointer-events:none}
+.hud-box{background:#fff;border-radius:14px;padding:5px 13px;
+  box-shadow:0 3px 0 rgba(23,90,130,.22), inset 0 2px 0 rgba(255,255,255,.8);color:var(--navy)}
+#score-label{font-size:9.5px;font-weight:800;letter-spacing:.15em;opacity:.6}
+#score{font-size:23px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--sky-deep);line-height:1}
+#hud-right{display:flex;gap:8px;align-items:center}
+#song-diff{font-size:10.5px;font-weight:800;opacity:.7;max-width:34vw}
+#btn-quit{pointer-events:auto;width:42px;height:42px;border-radius:50%;
+  background:linear-gradient(180deg,#FFFFFF,#E9F3F9);
+  box-shadow:0 4px 0 #B8CEDC, inset 0 2px 0 #fff;
+  font-size:16px;font-weight:800;color:var(--scarf);line-height:1}
+#btn-quit:active{transform:translateY(3px);box-shadow:0 1px 0 #B8CEDC}
+#progress-wrap{position:absolute;top:0;left:0;right:0;height:6px;background:rgba(23,90,130,.15);z-index:6}
+#progress{height:100%;width:0%;background:linear-gradient(90deg,var(--sky),var(--beak));border-radius:0 4px 4px 0}
+#stage{position:absolute;inset:0}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+
+#combo-view{position:absolute;left:50%;top:24%;transform:translateX(-50%);z-index:4;pointer-events:none;text-align:center;opacity:0;transition:opacity .15s}
+#combo-num{font-size:clamp(40px,10vw,72px);font-weight:800;color:var(--scarf);text-shadow:2px 2px 0 #fff,-2px 2px 0 #fff,2px -2px 0 #fff,-2px -2px 0 #fff;line-height:1}
+#combo-label{font-size:13px;font-weight:800;letter-spacing:.3em;opacity:.75;text-shadow:0 1px 0 #fff}
+body.bg-lastboss #combo-label{color:#fff;text-shadow:none}
+#judge-pop{position:absolute;left:50%;top:36%;transform:translateX(-50%);z-index:4;pointer-events:none;font-size:clamp(22px,5.5vw,34px);font-weight:800;opacity:0}
+#judge-pop.show{animation:judgepop .45s ease-out}
+@keyframes judgepop{0%{opacity:0;transform:translateX(-50%) scale(.6)}25%{opacity:1;transform:translateX(-50%) scale(1.15)}60%{opacity:1;transform:translateX(-50%) scale(1)}100%{opacity:0;transform:translateX(-50%) scale(1)}}
+.j-perfect{color:var(--beak);text-shadow:2px 2px 0 #fff,-2px -2px 0 #fff,0 0 18px #FFE9A8}
+.j-great{color:#2E9E6B;text-shadow:2px 2px 0 #fff,-2px -2px 0 #fff}
+.j-good{color:var(--sky-deep);text-shadow:2px 2px 0 #fff,-2px -2px 0 #fff}
+.j-miss{color:#98A8B8;text-shadow:2px 2px 0 #fff,-2px -2px 0 #fff}
+
+/* ペンペン */
+#penpen-wrap{position:absolute;z-index:5;pointer-events:none;left:6px;bottom:calc(24% + 4px);width:min(24vw,130px)}
+@media (min-aspect-ratio:5/6){
+  #penpen-wrap{left:auto;right:2.5vw;bottom:auto;top:50%;transform:translateY(-58%);width:min(20vw,200px)}
+}
+.pp-img{width:100%;display:block;transform-origin:50% 88%}
+#pp-glow{position:absolute;inset:6%;border-radius:50%;background:radial-gradient(circle,#FFE9A8 0%,rgba(255,233,168,0) 65%);opacity:0;transition:opacity .3s;z-index:-1}
+.p-happy .pp-img{animation:phappy .55s ease-in-out infinite}
+.p-fever .pp-img{animation:pfever .36s ease-in-out infinite}
+.p-fever #pp-glow{opacity:.9}
+.p-miss .pp-img{animation:pmiss .5s ease-out 1;filter:saturate(.4) brightness(.92)}
+@keyframes phappy{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8%) rotate(3deg)}}
+@keyframes pfever{0%,100%{transform:translateY(0) rotate(-6deg) scale(1.04)}50%{transform:translateY(-12%) rotate(6deg) scale(1.04)}}
+@keyframes pmiss{0%{transform:rotate(0)}25%{transform:rotate(-8deg) translateY(3%)}55%{transform:rotate(6deg)}100%{transform:rotate(0)}}
+#bubble{position:absolute;left:58%;top:-16%;min-width:88px;background:#fff;border:3px solid var(--navy);border-radius:16px;padding:6px 10px;font-size:13px;font-weight:800;color:var(--navy);opacity:0;transform:scale(.6);transition:opacity .2s, transform .2s;z-index:2}
+#bubble::after{content:"";position:absolute;left:14px;bottom:-11px;border:6px solid transparent;border-top-color:var(--navy)}
+#bubble.show{opacity:1;transform:scale(1)}
+
+/* ポーズ */
+#pause-overlay{position:fixed;inset:0;z-index:30;background:rgba(23,60,90,.5);backdrop-filter:blur(3px);
+  display:flex;align-items:center;justify-content:center;transition:opacity .2s}
+#pause-card{background:var(--paper);border:4px solid #fff;border-radius:26px;padding:26px 30px;
+  box-shadow:0 8px 0 rgba(23,90,130,.3);
+  display:flex;flex-direction:column;gap:12px;align-items:center;min-width:min(80vw,300px);color:var(--navy)}
+#pause-card h2{font-size:20px;font-weight:800}
+
+/* リザルト */
+.name-row{display:flex;align-items:center;gap:8px}
+.name-label{font-size:12px;font-weight:800;color:#fff;background:var(--sky-deep);border-radius:999px;padding:4px 14px}
+#player-name{font-family:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN",sans-serif;
+  font-size:15px;font-weight:800;color:var(--navy);text-align:center;
+  width:150px;padding:8px 10px;border:3px solid #CFE2EE;border-radius:999px;
+  background:#fff;outline:none}
+#player-name:focus{border-color:var(--sky)}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.result-btns{display:flex;flex-direction:column;gap:10px;margin-top:6px;align-items:center}
+
+
+/* ===== クリア画面(フレーム画像・4:3横長) ===== */
+#result-card{position:relative;width:min(94vw,640px);aspect-ratio:4/3;
+  overflow:hidden;border-radius:26px;background:#FFF9EF;
+  font-size:clamp(8.5px,2.45vw,15px);color:var(--navy);
+  box-shadow:0 8px 0 rgba(23,90,130,.25)}
+#clear-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  transform:scale(1.02)}
+#rc-inner{position:absolute;left:9%;right:7%;top:33%;bottom:8%;
+  display:flex;gap:4%;text-align:center;z-index:1}
+#rc-left{flex:1.3;min-width:0;display:flex;flex-direction:column;gap:.5em}
+#rc-right{flex:1;display:flex;flex-direction:column;align-items:center;gap:.15em}
+#result-song{font-size:.8em;font-weight:800;opacity:.55}
+#rank{font-size:3.1em;font-weight:800;line-height:1;
+  text-shadow:2px 2px 0 #FFF3CF,3px 4px 0 rgba(23,90,130,.15)}
+#rank.r-S{color:var(--beak)}#rank.r-A{color:var(--scarf)}#rank.r-B{color:var(--sky-deep)}#rank.r-C{color:#98A8B8}
+#result-score{font-size:1.4em;font-weight:800}
+#result-msg{font-size:.72em;font-weight:800;color:var(--sky-deep);line-height:1.5}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.3em}
+.stat{background:#F2FAFF;border-radius:.6em;padding:.35em .1em;box-shadow:inset 0 0 0 2px #E4EFF7}
+.stat .s-n{font-size:1em;font-weight:800;font-variant-numeric:tabular-nums}
+.stat .s-l{font-size:.52em;font-weight:800;opacity:.55}
+.stat.perfect .s-n{color:#D9A400}.stat.great .s-n{color:#2E9E6B}
+.stat.good .s-n{color:var(--sky-deep)}.stat.miss .s-n{color:#98A8B8}
+#maxcombo-row{font-size:.72em;font-weight:800;opacity:.75}
+#new-record{font-size:.68em;font-weight:800;color:#fff;
+  background:linear-gradient(180deg,#FFD34D,var(--gold));border-radius:999px;
+  padding:.3em 1em;box-shadow:0 2px 0 var(--gold-deep);animation:recPop .5s ease-out 1}
+@keyframes recPop{0%{transform:scale(.5)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+#ranking{background:rgba(242,250,255,.9);border-radius:.9em;padding:.5em .6em .35em;
+  box-shadow:inset 0 0 0 2px #E4EFF7}
+.rk-title{font-size:.68em;font-weight:800;color:var(--sky-deep);margin-bottom:.35em}
+#rk-list{list-style:none;display:flex;flex-direction:column;gap:.25em;margin:0;padding:0}
+#rk-list li{display:flex;align-items:center;gap:.5em;background:#fff;border-radius:.55em;
+  padding:.22em .6em;font-size:.75em;font-weight:800;color:var(--navy)}
+#rk-list li .rk-pos{width:1.4em;text-align:center}
+#rk-list li .rk-name{flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#rk-list li .rk-score{font-variant-numeric:tabular-nums}
+#rk-list li.me{background:#FFF7DB;box-shadow:0 0 0 2px var(--gold)}
+#rk-list li.empty{opacity:.45;justify-content:center}
+.rk-note{font-size:.5em;font-weight:700;opacity:.45;margin-top:.3em;text-align:right}
+
+#countdown{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;pointer-events:none}
+#count-num{font-size:100px;font-weight:800;color:var(--scarf);text-shadow:3px 3px 0 #fff,-3px 3px 0 #fff,3px -3px 0 #fff,-3px -3px 0 #fff;opacity:0}
+#count-num.tick{animation:ctick .95s ease-out 1}
+@keyframes ctick{0%{opacity:0;transform:scale(1.6)}20%{opacity:1;transform:scale(1)}80%{opacity:1}100%{opacity:0}}
+#loading-note{font-size:12px;font-weight:800;color:var(--sky-deep)}
+.credit{position:fixed;bottom:6px;left:0;right:0;text-align:center;font-size:9.5px;font-weight:700;opacity:.6;color:#fff;text-shadow:0 1px 0 rgba(23,90,130,.4);pointer-events:none}
+@media (prefers-reduced-motion:reduce){
+  .p-happy .pp-img,.p-fever .pp-img,.title-logo,.float-note,.song.previewing .s-btn,.diff.sel .d-stars img{animation:none}
+}
+</style>
+</head>
+<body class="bg-title">
+
+<!-- ===== タイトル ===== -->
+<div class="screen" id="scr-title">
+  <img class="title-logo" src="title.webp" alt="ペンペンビート! 音楽リズムゲーム">
+
+  <div class="panel">
+    <img class="label-img" src="label_stage.webp" alt="ステージ">
+    <div class="song-row" id="song-row"></div>
+
+    <img class="label-img" src="label_level.webp" alt="レベル">
+    <div class="diff-row">
+      <button class="diff" data-d="easy" aria-label="かんたん"><div class="d-stars"><img src="star.webp" alt=""></div></button>
+      <button class="diff sel" data-d="normal" aria-label="ふつう"><div class="d-stars"><img src="star.webp" alt=""><img src="star.webp" alt=""></div></button>
+      <button class="diff" data-d="hard" aria-label="むずかしい"><div class="d-stars"><img src="star.webp" alt=""><img src="star.webp" alt=""><img src="star.webp" alt=""></div></button>
+    </div>
+
+    <div class="name-row">
+      <span class="name-label">なまえ</span>
+      <input id="player-name" maxlength="8" placeholder="ゲスト" autocomplete="off">
+    </div>
+    <button class="btn" id="btn-start">▶ プレイ</button>
+    <div id="loading-note" style="display:none">♪ よみこみちゅう…</div>
+    <div class="howto">ノーツがラインに重なったらタップ!<br>PC:<b>D・F・J・K</b> / スマホ:<b>レーンをタップ</b></div>
+  </div>
+  <div class="bgm-credit">BGM:魔王魂</div>
+</div>
+
+<!-- ===== ゲーム ===== -->
+<div class="screen hidden" id="game">
+  <video id="stage-bg" muted loop playsinline preload="auto"></video>
+  <div id="progress-wrap"><div id="progress"></div></div>
+  <div id="hud">
+    <div class="hud-box"><div id="score-label">SCORE</div><div id="score">0</div></div>
+    <div id="hud-right">
+      <div class="hud-box"><div id="song-diff"></div></div>
+      <button id="btn-quit" aria-label="ポーズ">⏸</button>
+    </div>
+  </div>
+  <div id="stage"><canvas id="cv"></canvas></div>
+  <div id="combo-view"><div id="combo-num">0</div><div id="combo-label">COMBO</div></div>
+  <div id="judge-pop"></div>
+  <div id="penpen-wrap" class="p-idle">
+    <div id="bubble">いくよ〜!</div>
+    <div id="pp-glow"></div>
+    <img class="pp-img" src="penpen.webp" alt="">
+  </div>
+</div>
+
+<!-- ===== ポーズ ===== -->
+<div id="pause-overlay" class="hidden">
+  <div id="pause-card">
+    <h2>ひとやすみ中…</h2>
+    <button class="btn" id="btn-resume">▶ つづける</button>
+    <button class="btn ghost" id="btn-giveup">✕ やめてきょくをえらぶ</button>
+  </div>
+</div>
+
+<!-- ===== リザルト ===== -->
+<div class="screen hidden" id="scr-result">
+  <div id="result-card">
+    <video id="clear-bg" src="clear_bg.mp4" muted loop playsinline preload="auto" poster="clear_frame.webp"></video>
+    <div id="rc-inner">
+      <div id="rc-left">
+        <div class="stats">
+          <div class="stat perfect"><div class="s-n" id="st-p">0</div><div class="s-l">PERFECT</div></div>
+          <div class="stat great"><div class="s-n" id="st-g">0</div><div class="s-l">GREAT</div></div>
+          <div class="stat good"><div class="s-n" id="st-o">0</div><div class="s-l">GOOD</div></div>
+          <div class="stat miss"><div class="s-n" id="st-m">0</div><div class="s-l">MISS</div></div>
+        </div>
+        <div id="maxcombo-row">MAX COMBO <span id="st-c">0</span></div>
+        <div id="ranking">
+          <div class="rk-title">🏅 このステージの トップ3</div>
+          <ol id="rk-list"></ol>
+          <div class="rk-note">※このブラウザ内の記録です</div>
+        </div>
+      </div>
+      <div id="rc-right">
+        <div id="result-song"></div>
+        <div id="rank">S</div>
+        <div id="result-score">0</div>
+        <div id="new-record" style="display:none">🏆 1位にランクイン!</div>
+        <div id="result-msg"></div>
+      </div>
+    </div>
+  </div>
+  <div class="result-btns">
+    <button class="btn" id="btn-share">𝕏 で結果をシェア</button>
+    <button class="btn ghost" id="btn-retry">🏠 トップにもどる</button>
+  </div>
+</div>
+
+<div id="countdown"><div id="count-num"></div></div>
+<div class="credit">PENPEN BEAT! — made with AI / BGM:魔王魂</div>
+
+<script>
+"use strict";
+/* ===== 楽曲メタデータと譜面(音声解析により自動生成) ===== */
+const SONGS = {
+  town:    {file:"songs/maou_game_town12.mp3",     btn:"btn_town.webp",   name:"街並み"},
+  theme:   {file:"songs/maou_game_theme13.mp3",    btn:"btn_theme.webp",  name:"冒険"},
+  medley:  {file:"songs/maou_game_rock51.mp3",    btn:"btn_battle.webp", name:"バトル"},
+  lastboss:{file:"songs/maou_short_19_12345.mp3",  btn:"btn_boss.webp",   name:"ボスバトル"},
+};
+const CHARTS = {"town":{"dur":50.89,"bpm":103.4,"charts":{"easy":[[0.58,2],[1.161,0],[1.741,1],[2.322,3],[2.879,1],[3.46,3],[4.017,2],[4.598,3],[5.155,2],[5.735,3],[6.293,0],[6.873,3],[7.43,0],[8.011,3],[8.568,1],[9.149,0],[9.706,1],[10.286,3],[10.844,2],[11.424,3],[11.981,1],[12.562,3],[13.142,0],[13.7,3],[14.28,2],[14.838,3],[15.418,0],[15.975,1],[16.556,0],[17.113,3],[17.694,2],[18.251,0],[18.831,1],[19.389,3],[19.969,2],[20.55,3],[21.107,1],[21.687,3],[22.245,2],[22.825,3],[23.382,2],[23.963,3],[24.52,1],[25.101,0],[25.658,2],[26.239,3],[26.796,1],[27.376,0],[27.934,1],[28.514,3],[29.071,2],[29.652,3],[30.209,1],[30.79,3],[31.37,0],[31.927,3],[32.485,2],[33.065,1],[33.646,0],[34.203,3],[34.783,0],[35.341,3],[35.921,2],[36.479,0],[37.059,1],[37.616,2],[38.197,1],[38.777,3],[39.335,1],[39.915,3],[40.472,2],[41.053,3],[41.61,1],[42.167,3],[42.748,0],[43.328,3],[43.886,0],[44.466,3],[45.047,2],[45.604,0],[46.161,2],[46.742,3],[47.299,1],[47.88,3],[48.437,1]],"normal":[[0.58,2],[1.161,2],[1.741,1],[2.113,2],[2.67,0],[3.46,3],[4.017,2],[4.389,1],[4.969,0],[5.712,0],[6.293,0],[6.664,1],[7.059,0],[7.43,3],[8.011,3],[8.382,0],[8.754,1],[9.149,0],[9.706,1],[10.286,3],[10.844,3],[11.424,3],[11.796,0],[12.562,3],[13.142,0],[13.7,3],[14.071,0],[14.838,3],[15.418,0],[15.79,2],[16.347,0],[16.927,2],[17.299,1],[17.694,3],[18.065,0],[18.831,0],[19.203,1],[19.574,2],[19.969,3],[20.341,2],[21.107,1],[21.687,3],[22.245,2],[22.616,1],[23.382,2],[23.94,1],[24.52,1],[24.892,2],[25.472,0],[26.239,3],[26.61,0],[26.982,1],[27.376,0],[27.934,1],[28.514,3],[29.071,3],[29.652,3],[30.023,0],[30.79,3],[31.37,0],[31.927,3],[32.299,0],[33.065,2],[33.646,0],[34.203,0],[34.575,1],[35.155,2],[35.527,3],[35.921,0],[36.293,1],[37.059,1],[37.616,2],[38.197,1],[38.568,2],[39.335,1],[39.915,3],[40.472,2],[40.844,1],[41.61,1],[42.167,3],[42.748,0],[43.119,1],[43.7,0],[44.466,3],[44.838,1],[45.209,2],[45.604,0],[46.161,2],[46.742,3],[47.299,3],[47.88,3],[48.251,0]],"hard":[[0.58,2],[0.789,3],[0.975,2],[1.161,0],[1.347,1],[1.556,0],[1.718,3],[1.927,0],[2.113,2],[2.299,1],[2.485,3],[2.67,0],[2.879,1],[3.065,3],[3.251,1],[3.437,2],[3.622,0],[3.831,1],[4.017,2],[4.203,0],[4.389,2],[4.574,3],[4.76,1],[4.969,0],[5.155,2],[5.341,0],[5.526,3],[5.712,0],[5.898,1],[6.107,3],[6.293,0],[6.478,1],[6.664,2],[6.85,3],[7.059,0],[7.245,1],[7.43,0],[7.616,2],[7.802,3],[7.988,0],[8.173,3],[8.382,0],[8.568,3],[8.754,1],[8.94,2],[9.125,3],[9.334,1],[9.52,2],[9.706,1],[9.892,3],[10.077,2],[10.263,1],[10.472,0],[10.658,2],[10.844,3],[11.029,0],[11.215,3],[11.424,1],[11.61,3],[11.796,0],[11.981,1],[12.167,3],[12.353,2],[12.562,3],[12.748,1],[12.934,3],[13.119,2],[13.305,1],[13.491,2],[13.7,3],[13.886,2],[14.071,0],[14.257,3],[14.443,1],[14.652,3],[14.838,2],[15.023,1],[15.209,3],[15.395,2],[15.604,0],[15.79,1],[15.975,0],[16.161,2],[16.347,0],[16.533,2],[16.742,0],[16.927,2],[17.113,3],[17.299,2],[17.485,1],[17.67,3],[17.879,0],[18.065,2],[18.251,0],[18.437,1],[18.646,0],[18.808,2],[19.017,1],[19.203,3],[19.389,0],[19.574,1],[19.76,2],[19.946,3],[20.155,0],[20.341,2],[20.526,1],[20.712,3],[20.898,2],[21.084,0],[21.293,3],[21.478,2],[21.664,3],[21.85,1],[22.059,2],[22.245,0],[22.43,3],[22.616,1],[22.802,2],[22.988,3],[23.174,0],[23.382,2],[23.568,1],[23.754,3],[23.94,1],[24.126,2],[24.335,3],[24.52,1],[24.706,0],[24.892,2],[25.078,3],[25.287,1],[25.472,0],[25.658,2],[25.844,1],[26.03,3],[26.215,0],[26.401,2],[26.61,0],[26.796,3],[26.982,0],[27.167,1],[27.376,0],[27.562,2],[27.748,1],[27.934,3],[28.119,0],[28.305,2],[28.491,1],[28.7,3],[28.886,1],[29.071,3],[29.257,0],[29.443,3],[29.652,2],[29.838,3],[30.023,0],[30.209,1],[30.395,3],[30.581,2],[30.79,3],[30.975,0],[31.161,2],[31.347,1],[31.533,0],[31.718,2],[31.927,3],[32.113,2],[32.299,0],[32.485,3],[32.67,2],[32.879,3],[33.065,2],[33.251,1],[33.437,3],[33.622,2],[33.831,1],[33.994,2],[34.203,0],[34.389,2],[34.575,0],[34.76,2],[34.969,1],[35.155,2],[35.341,3],[35.527,0],[35.712,1],[35.898,3],[36.084,1],[36.293,2],[36.479,0],[36.664,2],[36.85,3],[37.036,1],[37.245,3],[37.431,2],[37.616,0],[37.802,2],[38.011,0],[38.174,3],[38.383,0],[38.568,2],[38.754,1],[38.94,3],[39.126,0],[39.335,1],[39.52,3],[39.706,1],[39.892,2],[40.078,0],[40.263,3],[40.472,2],[40.658,0],[40.844,1],[41.03,2],[41.215,3],[41.401,0],[41.61,1],[41.796,0],[41.982,3],[42.167,2],[42.353,1],[42.562,3],[42.748,0],[42.934,2],[43.119,1],[43.305,3],[43.491,2],[43.7,0],[43.886,1],[44.071,3],[44.257,2],[44.443,0],[44.629,3],[44.838,1],[45.023,3],[45.209,1],[45.395,2],[45.581,3],[45.79,1],[45.976,2],[46.161,0],[46.347,3],[46.533,2],[46.719,1],[46.904,2],[47.113,0],[47.299,3],[47.485,0],[47.671,2],[47.88,3],[48.065,1],[48.251,0],[48.437,1],[48.623,3],[48.808,2],[49.017,1]]}},"theme":{"dur":125.65,"bpm":89.1,"charts":{"easy":[[0.604,0],[1.347,3],[2.09,0],[2.833,3],[3.553,1],[4.296,3],[5.039,0],[5.782,3],[6.525,0],[7.268,3],[8.011,0],[8.754,3],[9.497,0],[10.24,3],[10.983,1],[11.726,2],[12.469,0],[13.189,3],[13.932,0],[14.675,3],[15.418,1],[16.161,3],[16.904,0],[17.647,3],[18.39,0],[19.11,2],[19.737,0],[20.387,3],[21.014,0],[21.641,2],[22.291,1],[22.941,3],[23.591,0],[24.311,3],[25.054,0],[25.797,3],[26.54,0],[27.26,2],[28.003,0],[28.746,3],[29.489,0],[30.232,3],[30.975,0],[31.718,3],[32.461,0],[33.205,3],[33.948,0],[34.691,2],[35.434,1],[36.153,3],[36.897,0],[37.64,3],[38.383,0],[39.126,2],[39.869,0],[40.612,3],[41.332,1],[42.075,3],[42.818,1],[43.561,3],[44.327,0],[45.07,1],[45.813,0],[46.486,1],[47.16,3],[47.81,0],[48.483,2],[49.133,0],[49.807,2],[50.457,1],[51.13,2],[51.804,0],[52.477,1],[53.127,0],[53.801,2],[54.474,1],[55.147,3],[55.798,1],[56.471,0],[57.144,2],[57.794,1],[58.468,3],[59.141,1],[59.791,0],[60.465,2],[61.138,1],[61.812,2],[62.462,0],[63.135,2],[63.808,0],[64.459,2],[65.132,1],[65.805,3],[66.479,2],[67.129,1],[67.802,2],[68.476,1],[69.126,0],[69.822,1],[70.473,0],[71.146,1],[71.796,3],[72.469,2],[73.143,0],[73.793,2],[74.466,0],[75.14,2],[75.79,0],[76.463,1],[77.137,2],[77.787,3],[78.46,1],[79.134,0],[79.807,1],[80.48,2],[81.131,1],[81.804,2],[82.477,3],[83.127,1],[83.801,0],[84.474,1],[85.124,0],[85.798,1],[86.471,2],[87.121,1],[87.795,2],[88.468,1],[89.118,3],[89.792,0],[90.465,2],[91.138,3],[91.812,2],[92.462,3],[93.135,1],[93.809,2],[94.459,0],[95.132,3],[95.806,1],[96.479,2],[97.129,1],[97.802,2],[98.476,1],[99.126,2],[99.799,1],[100.473,0],[101.123,3],[101.796,2],[102.47,1],[103.143,2],[103.793,1],[104.467,2],[105.14,1],[105.79,3],[106.463,0],[107.137,2],[107.81,1],[108.46,3]],"normal":[[0.58,0],[0.952,1],[1.324,2],[2.067,0],[2.81,0],[3.553,1],[4.296,3],[5.039,0],[5.782,3],[6.525,0],[7.268,3],[7.988,0],[8.382,2],[8.754,3],[9.497,0],[10.24,3],[10.983,1],[11.726,2],[12.446,1],[12.817,0],[13.189,3],[13.932,0],[14.675,3],[15.418,1],[16.138,1],[16.904,0],[17.624,0],[18.367,0],[19.11,2],[19.737,0],[20.387,3],[21.014,0],[21.641,2],[22.291,1],[22.941,3],[23.591,0],[24.311,3],[25.031,0],[25.774,0],[26.517,0],[27.26,2],[28.003,0],[28.746,3],[29.489,0],[30.232,3],[30.952,1],[31.695,0],[32.09,2],[32.438,0],[33.205,3],[33.948,0],[34.691,2],[35.434,1],[36.153,1],[36.525,3],[36.897,0],[37.64,3],[38.359,0],[39.102,1],[39.845,1],[40.612,3],[41.332,1],[42.075,3],[42.818,1],[43.561,3],[44.327,0],[45.07,1],[45.79,0],[46.486,1],[47.16,3],[47.81,0],[48.483,2],[49.133,0],[49.807,2],[50.132,1],[50.457,3],[51.13,2],[51.804,0],[52.454,2],[53.127,0],[53.777,2],[54.474,1],[55.124,1],[55.798,1],[56.471,1],[57.121,2],[57.794,1],[58.12,0],[58.445,3],[58.793,2],[59.118,1],[59.791,0],[60.465,2],[61.138,1],[61.788,2],[62.462,0],[63.135,2],[63.46,1],[63.808,0],[64.459,2],[65.132,1],[65.805,1],[66.13,3],[66.456,1],[66.804,0],[67.129,1],[67.454,2],[67.779,3],[68.476,1],[68.801,0],[69.126,2],[69.822,1],[70.449,3],[71.123,2],[71.796,1],[72.446,2],[73.143,0],[73.793,2],[74.118,0],[74.466,3],[75.117,2],[75.79,0],[76.463,1],[76.788,3],[77.137,2],[77.787,2],[78.46,1],[79.134,1],[79.459,0],[79.784,3],[80.132,2],[80.457,1],[81.131,1],[81.804,2],[82.129,1],[82.454,2],[82.802,0],[83.127,1],[83.801,0],[84.451,1],[85.124,0],[85.775,1],[86.471,1],[87.121,1],[87.795,2],[88.468,1],[89.118,1],[89.792,3],[90.465,0],[91.138,3],[91.788,2],[92.462,3],[93.135,1],[93.46,2],[93.809,0],[94.459,0],[95.132,3],[95.457,1],[95.806,2],[96.131,0],[96.456,2],[97.129,1],[97.686,3],[98.128,1],[98.476,0],[98.801,2],[99.126,3],[99.799,1],[100.357,3],[101.123,0],[101.471,2],[101.796,3],[102.47,1],[103.12,3],[103.793,1],[104.118,3],[104.467,2],[105.14,1],[105.79,3],[106.138,0],[106.463,2],[106.789,1],[107.137,2],[107.787,3],[108.46,3],[109.134,2],[109.459,3],[110.457,2],[111.131,2]],"hard":[[0.58,0],[0.836,1],[1.207,0],[2.067,0],[2.322,2],[2.81,0],[3.553,1],[4.296,3],[5.039,0],[5.782,3],[6.037,0],[6.525,0],[6.78,2],[7.268,3],[7.988,0],[8.266,1],[8.731,0],[9.497,0],[10.24,3],[10.983,1],[11.355,1],[11.726,2],[12.446,1],[12.817,1],[13.189,3],[13.932,0],[14.187,2],[14.443,0],[14.675,3],[14.93,0],[15.395,1],[16.138,1],[16.649,0],[16.904,2],[17.624,0],[18.367,0],[19.11,2],[19.737,0],[20.387,3],[21.014,0],[21.339,1],[21.641,2],[22.291,1],[22.941,3],[23.591,0],[24.288,0],[24.66,0],[25.031,0],[25.542,0],[25.774,2],[26.03,0],[26.285,1],[26.517,0],[26.773,3],[27.26,2],[28.003,0],[28.746,3],[29.489,0],[29.745,1],[30.209,0],[30.488,2],[30.952,1],[31.695,0],[31.951,3],[32.438,0],[32.694,2],[33.205,3],[33.948,0],[34.691,2],[35.062,1],[35.434,1],[36.153,1],[36.525,1],[36.897,0],[37.616,0],[37.895,3],[38.15,0],[38.359,2],[38.638,0],[39.102,1],[39.613,0],[39.845,1],[40.612,3],[41.332,1],[41.587,0],[42.075,3],[42.33,0],[42.818,1],[43.561,3],[44.327,0],[45.07,1],[45.79,0],[46.138,0],[46.486,1],[47.16,3],[47.462,3],[47.81,0],[48.228,3],[48.483,2],[48.808,2],[49.11,3],[49.459,1],[49.784,3],[50.132,1],[50.457,1],[50.805,2],[50.968,1],[51.13,2],[51.293,1],[51.479,2],[51.641,1],[51.804,0],[52.454,2],[52.64,1],[53.127,0],[53.452,3],[53.638,1],[53.801,2],[54.451,3],[54.799,1],[55.124,1],[55.31,0],[55.635,1],[55.798,2],[56.123,2],[56.308,0],[56.471,1],[56.633,0],[56.796,2],[56.959,1],[57.121,2],[57.446,0],[57.632,3],[57.794,1],[57.98,0],[58.305,0],[58.468,1],[58.793,3],[58.979,2],[59.141,1],[59.466,1],[59.791,0],[60.302,2],[60.465,3],[60.79,1],[61.115,2],[61.463,3],[61.626,2],[61.788,0],[61.951,1],[62.113,3],[62.299,2],[62.462,0],[62.787,1],[63.135,2],[63.46,1],[63.785,3],[64.134,2],[64.459,2],[64.807,1],[65.132,1],[65.643,2],[65.805,1],[66.13,1],[66.456,1],[66.804,1],[66.966,0],[67.129,1],[67.291,0],[67.454,1],[67.617,0],[67.779,2],[68.127,0],[68.313,1],[68.476,3],[68.638,0],[68.801,1],[68.963,0],[69.126,2],[69.822,1],[70.124,2],[70.449,3],[71.123,2],[71.448,1],[71.796,1],[72.446,2],[72.632,1],[72.795,3],[72.957,2],[73.143,0],[73.445,1],[73.793,2],[73.979,1],[74.466,0],[74.791,3],[74.977,2],[75.14,1],[75.79,0],[76.115,0],[76.463,1],[76.788,1],[76.974,0],[77.137,2],[77.462,1],[77.648,0],[77.973,0],[78.135,1],[78.298,3],[78.46,1],[78.785,0],[78.971,1],[79.134,2],[79.296,0],[79.459,3],[79.621,0],[79.784,3],[80.132,3],[80.457,2],[80.805,1],[81.131,1],[81.641,2],[81.804,0],[81.966,1],[82.129,3],[82.454,2],[82.802,2],[82.965,1],[83.127,0],[83.29,1],[83.638,1],[83.801,0],[84.126,0],[84.451,1],[84.637,3],[85.124,0],[85.473,2],[85.775,1],[86.123,2],[86.309,0],[86.471,1],[86.796,0],[86.959,1],[87.121,3],[87.446,1],[87.632,0],[87.795,2],[88.12,1],[88.305,0],[88.468,1],[88.793,1],[89.118,1],[89.792,3],[90.465,0],[91.138,3],[91.463,3],[91.696,2],[92.253,2],[92.462,3],[92.787,1],[93.135,1],[93.46,2],[93.693,3],[94.134,2],[94.366,3],[95.016,3],[95.457,1],[95.689,3],[96.131,2],[96.363,0],[96.804,3],[97.013,1],[97.454,3],[97.686,2],[98.128,1],[98.453,3],[98.801,2],[99.01,3],[99.474,2],[99.683,3],[100.241,3],[100.45,2],[100.798,1],[101.03,2],[101.355,2],[101.68,3],[102.237,3],[102.446,0],[102.911,2],[103.12,3],[103.468,1],[103.793,1],[104.118,3],[104.35,0],[104.792,3],[105.024,2],[105.465,2],[105.697,1],[106.138,0],[106.347,3],[106.696,1],[107.021,2],[107.578,3],[107.787,0],[108.112,3],[108.344,1],[108.785,1],[109.134,2],[109.459,3],[109.691,0],[110.132,3],[110.364,1],[110.806,2],[111.015,3],[111.479,3],[111.711,0],[112.199,3],[113.964,1]]}},"lastboss":{"dur":92.68,"bpm":99.4,"charts":{"easy":[[0.998,3],[1.602,1],[2.229,3],[2.833,1],[3.46,2],[4.087,3],[4.714,0],[5.341,3],[5.968,1],[6.571,2],[7.175,3],[7.779,0],[8.336,1],[8.916,3],[9.613,0],[10.194,3],[10.774,0],[11.378,1],[12.005,0],[12.585,1],[13.142,0],[13.746,2],[14.327,3],[14.884,0],[15.488,1],[16.068,0],[16.695,3],[17.299,0],[17.926,3],[18.53,2],[19.156,0],[19.76,1],[20.387,3],[21.014,2],[21.618,1],[22.245,2],[22.848,0],[23.452,3],[24.079,1],[24.706,0],[25.31,1],[25.937,2],[26.54,3],[27.167,2],[27.771,3],[28.398,1],[29.002,0],[29.629,1],[30.232,3],[30.836,1],[31.463,2],[32.067,3],[32.694,1],[33.321,0],[33.948,2],[34.551,3],[35.155,1],[35.782,0],[36.409,1],[37.013,2],[37.64,3],[38.243,1],[38.847,0],[39.474,2],[40.054,0],[40.635,1],[41.215,0],[41.819,1],[42.423,3],[43.05,1],[43.654,2],[44.304,0],[45.0,3],[45.604,1],[46.231,0],[46.835,1],[47.462,2],[48.065,3],[48.692,0],[49.319,3],[49.923,1],[50.527,3],[51.154,0],[51.757,3],[52.361,1],[52.895,2],[53.522,0],[54.219,3],[54.846,0],[55.472,3],[56.099,0],[56.703,3],[57.307,1],[57.934,2],[58.538,0],[59.141,1],[59.768,2],[60.372,1],[60.976,2],[61.556,3],[62.113,2],[62.647,0],[63.181,3],[63.785,1],[64.366,0],[64.993,1],[65.62,3],[66.223,1],[66.827,2],[67.361,1],[67.965,2],[68.476,3],[69.01,1],[69.613,2],[70.24,0],[70.844,2],[71.471,0],[72.098,1],[72.702,3],[73.329,2],[73.932,0],[74.559,3],[75.163,0],[75.79,3],[76.394,0],[77.021,3],[77.648,1],[78.228,3],[78.878,0],[79.482,3],[80.086,0],[80.713,3],[81.34,0],[82.013,3],[82.64,2],[83.267,3],[83.917,0],[84.567,3],[85.194,0],[85.798,3],[86.378,2]],"normal":[[0.372,1],[0.697,2],[0.998,3],[1.3,1],[1.602,0],[2.229,3],[2.833,1],[3.46,2],[3.808,3],[4.087,0],[4.389,2],[4.714,0],[5.341,3],[5.642,1],[5.968,2],[6.571,1],[6.873,3],[7.175,0],[7.779,0],[8.336,1],[8.916,3],[9.613,0],[9.915,2],[10.194,3],[10.751,3],[11.378,1],[11.981,2],[12.585,1],[12.934,3],[13.746,2],[14.327,3],[14.861,0],[15.139,2],[15.488,0],[16.068,0],[16.672,0],[17.276,0],[17.601,1],[17.903,0],[18.506,3],[19.156,0],[19.76,1],[20.387,1],[21.014,3],[21.316,2],[21.618,1],[22.245,2],[22.547,1],[22.848,2],[23.15,1],[23.452,0],[24.079,1],[24.59,0],[25.008,2],[25.31,1],[25.937,1],[26.54,3],[27.144,1],[27.771,3],[28.375,1],[29.002,1],[29.629,1],[30.232,3],[30.534,0],[30.836,1],[31.161,0],[31.463,2],[32.067,3],[32.694,1],[33.321,1],[33.948,0],[34.551,2],[35.155,1],[35.782,1],[36.409,1],[37.013,1],[37.64,2],[38.243,1],[38.847,1],[39.474,0],[40.054,0],[40.635,1],[41.215,0],[41.633,2],[42.423,1],[43.027,1],[43.654,1],[44.304,0],[44.582,3],[45.0,0],[45.604,1],[45.906,2],[46.231,0],[46.835,1],[47.438,1],[48.065,2],[48.367,1],[48.692,0],[49.319,3],[49.923,1],[50.527,3],[51.154,0],[51.757,3],[52.361,1],[52.686,2],[53.197,1],[53.522,0],[54.219,0],[54.822,3],[55.472,3],[56.099,0],[56.703,3],[56.982,1],[57.284,3],[57.934,2],[58.538,0],[59.141,1],[59.443,0],[59.768,2],[60.372,1],[60.976,2],[61.556,3],[62.09,1],[62.647,0],[63.181,3],[63.785,3],[64.366,0],[64.691,2],[64.993,1],[65.318,2],[65.62,3],[65.898,2],[66.223,1],[66.827,2],[67.361,1],[67.965,2],[68.476,3],[68.986,1],[69.613,2],[70.24,0],[70.542,3],[70.821,1],[71.471,0],[71.75,2],[72.098,1],[72.702,3],[73.329,2],[73.607,0],[73.909,2],[74.559,3],[75.163,0],[75.79,3],[76.394,0],[77.021,3],[77.648,1],[78.228,3],[78.878,0],[79.459,2],[79.784,1],[80.062,3],[80.387,1],[80.713,3],[80.991,2],[81.34,0],[82.013,3],[82.64,2],[83.267,3],[83.917,0],[84.567,3],[85.194,0],[85.798,3],[86.378,2],[86.727,3]],"hard":[[0.372,1],[0.58,0],[0.882,0],[1.3,1],[1.602,1],[1.811,0],[2.136,0],[2.531,2],[2.833,1],[3.135,2],[3.344,0],[3.669,0],[4.087,3],[4.389,2],[4.621,3],[4.83,1],[5.016,0],[5.224,2],[5.642,3],[5.968,1],[6.153,2],[6.571,1],[6.873,3],[7.082,0],[7.384,1],[7.779,0],[8.313,2],[8.591,1],[8.893,2],[9.311,3],[9.613,0],[9.915,2],[10.194,3],[10.751,3],[11.378,1],[11.981,2],[12.423,3],[12.585,1],[12.934,3],[13.142,0],[13.351,2],[13.537,1],[13.746,2],[13.932,1],[14.327,3],[14.559,0],[14.861,0],[15.139,2],[15.464,3],[15.627,1],[16.068,0],[16.672,0],[16.927,3],[17.276,0],[17.601,0],[17.903,0],[18.228,0],[18.506,3],[18.715,2],[19.156,0],[19.365,3],[19.76,1],[20.387,1],[20.991,1],[21.316,3],[21.618,1],[21.92,1],[22.245,2],[22.547,1],[22.732,0],[23.15,1],[23.452,0],[23.638,1],[23.87,0],[24.079,1],[24.404,0],[24.59,3],[25.008,2],[25.31,1],[25.612,0],[25.937,1],[26.239,0],[26.517,3],[27.144,1],[27.469,0],[27.748,2],[27.98,0],[28.375,1],[28.7,0],[29.002,1],[29.304,0],[29.629,1],[29.931,0],[30.232,3],[30.534,0],[30.813,2],[31.161,0],[31.463,2],[32.044,2],[32.369,0],[32.694,1],[33.205,3],[33.506,1],[33.948,0],[34.157,3],[34.551,2],[35.062,3],[35.782,1],[36.084,0],[36.293,2],[36.595,0],[36.897,0],[37.314,0],[37.5,1],[37.802,1],[38.127,1],[38.522,0],[38.847,1],[39.149,3],[39.358,0],[39.753,2],[40.054,0],[40.403,3],[40.635,1],[41.215,0],[41.633,2],[41.819,1],[42.423,1],[42.655,3],[43.027,1],[43.259,0],[43.468,3],[43.654,1],[44.28,0],[44.582,0],[44.977,2],[45.604,1],[45.906,1],[46.231,0],[46.417,3],[46.835,1],[47.137,1],[47.438,1],[47.763,0],[47.972,2],[48.367,1],[48.692,0],[48.901,3],[49.296,3],[49.598,0],[49.923,1],[50.527,3],[50.736,0],[51.154,0],[51.757,3],[52.082,1],[52.361,2],[52.686,2],[52.895,0],[53.197,1],[53.499,3],[53.824,3],[54.219,0],[54.428,1],[54.822,3],[55.472,3],[55.774,2],[56.076,3],[56.285,0],[56.564,1],[56.982,1],[57.284,3],[57.609,1],[57.818,2],[58.236,1],[58.538,0],[59.141,1],[59.443,0],[59.675,3],[59.954,2],[60.372,1],[60.697,3],[60.976,2],[61.185,3],[61.556,3],[62.09,1],[62.322,2],[62.531,0],[62.764,1],[62.926,0],[63.181,3],[63.785,3],[64.366,0],[64.691,2],[64.993,1],[65.178,2],[65.62,3],[65.898,2],[66.223,1],[66.409,2],[66.827,2],[67.338,1],[67.965,2],[68.476,3],[68.685,0],[68.986,1],[69.613,2],[69.939,0],[70.101,1],[70.542,0],[70.821,1],[71.146,0],[71.355,2],[71.75,0],[72.098,1],[72.702,3],[72.887,2],[73.329,2],[73.607,0],[73.909,2],[74.536,3],[75.047,2],[75.349,0],[75.767,2],[75.952,1],[76.394,0],[76.579,2],[76.904,3],[77.206,1],[77.648,1],[77.81,2],[78.228,3],[78.414,0],[78.855,2],[79.064,3],[79.459,2],[79.668,0],[80.062,3],[80.387,1],[80.713,3],[80.991,2],[81.2,1],[81.595,3],[82.013,3],[82.64,2],[83.267,3],[83.917,0],[84.567,3],[84.892,3],[85.194,0],[85.798,3],[86.378,2],[86.727,3],[86.936,2],[87.168,1],[87.353,0],[87.562,2],[87.795,1],[88.491,3]]}},"medley":{"dur":57.5,"bpm":161.5,"charts":{"easy":[[0.348,2],[1.115,0],[1.858,1],[2.624,0],[3.367,2],[4.11,1],[4.853,3],[5.619,1],[6.362,0],[7.129,2],[7.872,0],[8.615,3],[9.358,1],[10.124,0],[10.867,2],[11.61,3],[12.376,1],[13.119,3],[13.862,0],[14.629,3],[15.372,0],[16.115,2],[16.858,0],[17.624,1],[18.367,3],[19.11,0],[19.876,2],[20.619,0],[21.362,1],[22.129,0],[22.872,3],[23.615,0],[24.358,1],[25.124,0],[25.867,2],[26.61,3],[27.376,1],[28.119,3],[28.862,0],[29.629,3],[30.372,2],[31.115,1],[31.858,0],[32.624,2],[33.367,3],[34.11,1],[34.876,3],[35.619,2],[36.362,3],[37.129,0],[37.872,2],[38.615,1],[39.358,3],[40.124,0],[40.867,2],[41.633,3],[42.376,1],[43.119,3],[43.862,0],[44.629,3],[45.372,2],[46.115,1],[46.881,3],[47.624,0],[48.367,3],[49.11,2],[49.876,3],[50.62,1],[51.363,3],[52.129,0],[52.872,3],[53.615,2],[54.381,3],[55.124,0]],"normal":[[0.348,2],[0.72,1],[1.115,0],[1.486,3],[1.858,1],[2.229,2],[2.624,0],[2.972,2],[3.367,3],[3.738,0],[4.11,1],[4.481,0],[4.853,1],[5.224,2],[5.619,1],[5.991,0],[6.362,1],[6.734,0],[7.129,3],[7.477,1],[7.848,2],[8.22,1],[8.615,0],[8.986,3],[9.358,1],[9.729,2],[10.124,0],[10.472,1],[10.867,0],[11.238,3],[11.61,2],[12.005,0],[12.376,3],[12.748,0],[13.119,3],[13.491,0],[13.862,3],[14.257,0],[14.629,3],[15.0,0],[15.372,1],[15.743,0],[16.115,2],[16.486,0],[16.858,3],[17.229,1],[17.624,0],[17.972,1],[18.367,2],[18.739,0],[19.11,3],[19.482,1],[19.876,0],[20.248,2],[20.619,0],[20.991,3],[21.362,0],[21.734,1],[22.129,0],[22.477,2],[22.872,0],[23.243,3],[23.615,0],[23.986,1],[24.358,2],[24.729,1],[25.124,0],[25.496,3],[25.867,0],[26.239,2],[26.61,1],[27.005,0],[27.376,3],[27.748,0],[28.119,3],[28.491,0],[28.862,3],[29.257,0],[29.629,3],[30.0,0],[30.372,3],[30.743,1],[31.115,2],[31.486,0],[31.858,1],[32.253,3],[32.624,2],[32.996,0],[33.367,2],[33.739,1],[34.11,3],[34.505,0],[34.876,3],[35.248,0],[35.619,2],[35.991,1],[36.362,3],[36.734,1],[37.129,3],[37.5,1],[37.872,2],[38.243,1],[38.615,0],[38.986,2],[39.358,1],[39.753,0],[40.124,3],[40.496,1],[40.867,2],[41.239,0],[41.633,3],[42.005,0],[42.376,3],[42.748,0],[43.119,3],[43.491,1],[43.862,3],[44.234,0],[44.629,3],[45.0,2],[45.372,3],[45.743,0],[46.115,2],[46.51,1],[46.881,3],[47.253,0],[47.624,3],[47.996,2],[48.367,3],[48.739,0],[49.11,2],[49.505,1],[49.876,3],[50.248,0],[50.62,3],[50.991,2],[51.363,3],[51.734,1],[52.129,3],[52.5,1],[52.872,3],[53.243,0],[53.615,3],[53.986,1],[54.381,3],[54.729,1],[55.124,0],[55.472,1]],"hard":[[0.348,2],[0.534,0],[0.72,1],[0.929,3],[1.115,0],[1.3,2],[1.486,0],[1.858,1],[2.043,2],[2.229,1],[2.438,0],[2.624,3],[2.786,0],[2.972,2],[3.181,1],[3.367,2],[3.715,1],[4.11,1],[4.296,3],[4.481,0],[4.853,1],[5.039,3],[5.224,1],[5.433,2],[5.619,1],[5.805,0],[5.991,3],[6.362,1],[6.734,0],[7.105,1],[7.291,2],[7.477,1],[7.686,3],[7.848,1],[8.057,0],[8.22,1],[8.429,2],[8.615,0],[8.8,3],[8.986,0],[9.358,1],[9.729,1],[10.124,0],[10.286,2],[10.472,1],[10.681,3],[10.867,0],[11.053,2],[11.215,1],[11.61,2],[11.981,2],[12.376,3],[12.748,0],[13.119,3],[13.491,0],[13.862,3],[14.257,0],[14.629,3],[15.0,0],[15.372,0],[15.557,1],[15.743,0],[15.929,2],[16.115,0],[16.3,3],[16.486,0],[16.858,0],[17.043,1],[17.229,2],[17.438,0],[17.624,3],[17.786,0],[17.972,1],[18.181,2],[18.367,1],[18.553,0],[18.739,3],[19.11,0],[19.296,2],[19.482,1],[19.691,3],[19.853,1],[20.062,0],[20.225,2],[20.434,1],[20.619,0],[20.805,3],[20.991,0],[21.177,2],[21.362,0],[21.734,1],[22.105,0],[22.291,1],[22.477,2],[22.686,0],[22.872,3],[23.057,0],[23.243,1],[23.429,0],[23.615,2],[23.8,0],[23.986,3],[24.358,1],[24.567,0],[24.729,1],[24.938,0],[25.124,2],[25.31,0],[25.472,1],[25.681,0],[25.867,3],[26.053,1],[26.239,0],[26.61,2],[26.982,2],[27.376,3],[27.748,0],[28.119,3],[28.491,0],[28.862,3],[29.257,0],[29.629,3],[30.0,0],[30.372,3],[30.557,1],[30.743,2],[30.929,1],[31.115,2],[31.3,1],[31.486,2],[31.672,0],[31.858,1],[32.044,3],[32.229,1],[32.438,3],[32.624,2],[32.81,1],[32.996,2],[33.367,2],[33.553,1],[33.739,0],[33.924,1],[34.11,3],[34.319,2],[34.482,1],[34.691,3],[34.876,0],[35.062,3],[35.248,0],[35.434,3],[35.619,2],[35.805,1],[35.991,0],[36.177,2],[36.362,3],[36.548,1],[36.734,0],[36.92,1],[37.129,3],[37.314,2],[37.5,1],[37.686,3],[37.872,2],[38.058,0],[38.243,1],[38.429,2],[38.615,1],[38.801,3],[38.986,2],[39.358,1],[39.544,0],[39.729,1],[39.938,2],[40.124,3],[40.31,2],[40.496,1],[40.681,2],[40.867,0],[41.239,2],[41.633,3],[42.005,0],[42.376,3],[42.748,0],[42.934,1],[43.119,3],[43.305,2],[43.491,1],[43.677,3],[43.862,0],[44.048,2],[44.234,0],[44.629,3],[45.0,3],[45.372,3],[45.743,0],[45.929,1],[46.115,2],[46.301,3],[46.51,1],[46.672,3],[46.881,0],[47.229,3],[47.624,3],[47.996,3],[48.367,3],[48.739,0],[48.924,2],[49.11,1],[49.296,3],[49.505,1],[49.691,3],[49.876,0],[50.062,2],[50.248,0],[50.62,3],[50.991,3],[51.363,3],[51.734,1],[52.129,3],[52.315,2],[52.5,1],[52.686,3],[52.872,0],[53.058,2],[53.243,0],[53.615,3],[53.986,1],[54.381,3],[54.729,1],[54.938,0],[55.124,2],[55.287,1],[55.472,3],[55.681,0]]}}};
+
+/* 曲別のフィールド配色(暗背景の曲は暗色フィールド) */
+const THEMES = {
+  town:    {field:"rgba(255,255,255,.74)", line:"rgba(51,70,90,.10)",  label:"rgba(51,70,90,.5)"},
+  theme:   {field:"rgba(255,255,255,.74)", line:"rgba(51,70,90,.10)",  label:"rgba(51,70,90,.5)"},
+  lastboss:{field:"rgba(28,20,44,.66)",    line:"rgba(255,255,255,.14)",label:"rgba(255,255,255,.65)"},
+  medley:  {field:"rgba(255,255,255,.78)", line:"rgba(51,70,90,.10)",  label:"rgba(51,70,90,.5)"},
+};
+const DIFF = {
+  easy:  {label:"★",   speed:.42},
+  normal:{label:"★★",  speed:.52},
+  hard:  {label:"★★★", speed:.62},
+};
+const $=id=>document.getElementById(id);
+
+/* ===== スコア記録(ブラウザ内 localStorage) ===== */
+const store={
+  getName(){try{return localStorage.getItem("ppb_name")||""}catch(e){return ""}},
+  setName(v){try{localStorage.setItem("ppb_name",v)}catch(e){}},
+  loadScores(){try{return JSON.parse(localStorage.getItem("ppb_scores")||"{}")}catch(e){return {}}},
+  saveScores(o){try{localStorage.setItem("ppb_scores",JSON.stringify(o))}catch(e){}},
+};
+function playerName(){
+  const el=$("player-name");
+  return ((el&&el.value.trim())||"ゲスト").slice(0,8);
+}
+/* 記録して順位(0始まり,トップ10外は-1)を返す */
+function recordScore(songKey,diffKey,entry){
+  const key=songKey+"_"+diffKey;
+  const all=store.loadScores();
+  const list=all[key]||[];
+  list.push(entry);
+  list.sort((a,b)=>b.s-a.s || a.d-b.d);
+  all[key]=list.slice(0,10);
+  store.saveScores(all);
+  return all[key].findIndex(e=>e.d===entry.d && e.s===entry.s && e.n===entry.n);
+}
+function renderTop3(songKey,diffKey,myEntry){
+  const key=songKey+"_"+diffKey;
+  const list=(store.loadScores()[key]||[]).slice(0,3);
+  const medals=["🥇","🥈","🥉"];
+  const ol=$("rk-list");
+  ol.innerHTML="";
+  for(let i=0;i<3;i++){
+    const li=document.createElement("li");
+    const e=list[i];
+    if(e){
+      const isMe=myEntry && e.d===myEntry.d && e.s===myEntry.s && e.n===myEntry.n;
+      if(isMe)li.className="me";
+      li.innerHTML=`<span class="rk-pos">${medals[i]}</span><span class="rk-name"></span><span class="rk-score">${e.s.toLocaleString()}</span>`;
+      li.querySelector(".rk-name").textContent=e.n;
+    }else{
+      li.className="empty";
+      li.textContent="─";
+    }
+    ol.appendChild(li);
+  }
+}
+const cv=$("cv"), ctx=cv.getContext("2d");
+const LANE_COLORS=["#FF8FA3","#7ED6A5","#8EC9FF","#FFC24B"];
+const KEYS=["KeyD","KeyF","KeyJ","KeyK"], KEY_LABELS=["D","F","J","K"];
+const JUDGE={perfect:.06, great:.11, good:.16};
+const SCORE_VAL={perfect:1000, great:700, good:300};
+
+let state="title", songKey="town", diffKey="normal";
+let chart=[], noteIdx=0, activeNotes=[];
+let songDur=0, speed=.5, theme=THEMES.town;
+let score=0, combo=0, maxCombo=0;
+let counts={perfect:0,great:0,good:0,miss:0};
+let laneFlash=[0,0,0,0], particles=[];
+let W=0,H=0,DPR=1, judgeY=0, laneX=[], laneW=0, fieldL=0, fieldR=0;
+let rafId=0, penpenTimer=0, bubbleTimer=0;
+
+/* ===== オーディオ ===== */
+let AC=null, masterGain=null;
+let audioMode="buffer";
+let bufferCache={}, curSource=null, songStartAC=0;
+let el=null;
+
+function initAudio(){
+  if(AC) return;
+  AC = new (window.AudioContext||window.webkitAudioContext)();
+  masterGain = AC.createGain(); masterGain.gain.value=.85;
+  masterGain.connect(AC.destination);
+}
+/* 最初のタップ/クリックでオーディオ解禁(ホバー試聴用) */
+window.addEventListener("pointerdown",()=>{initAudio();if(AC.state==="suspended")AC.resume();},{once:true});
+
+async function loadSong(key){
+  if(bufferCache[key]) return bufferCache[key];
+  const res = await fetch(SONGS[key].file);
+  if(!res.ok) throw new Error("fetch failed");
+  const buf = await AC.decodeAudioData(await res.arrayBuffer());
+  bufferCache[key]=buf;
+  return buf;
+}
+function songTime(){
+  if(audioMode==="buffer") return AC.currentTime - songStartAC;
+  return el ? el.currentTime : 0;
+}
+function stopSong(){
+  if(curSource){try{curSource.stop()}catch(e){} curSource=null;}
+  if(el){el.pause(); el.currentTime=0;}
+}
+const mtof=m=>440*Math.pow(2,(m-69)/12);
+function playTone(t,midi,dur,type,vol){
+  if(!AC)return;
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.type=type;o.frequency.value=mtof(midi);
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(vol,t+.012);
+  g.gain.exponentialRampToValueAtTime(.001,t+dur);
+  o.connect(g);g.connect(masterGain);o.start(t);o.stop(t+dur+.05);
+}
+function playHitSE(q){
+  if(!AC)return;
+  const t=AC.currentTime;
+  const midi=q==="perfect"?96:q==="great"?91:86;
+  playTone(t,midi,.1,"triangle",q==="perfect"?.35:.24);
+  if(q==="perfect")playTone(t,midi+7,.09,"triangle",.18);
+}
+
+/* クリア画面BGM(ジングル) */
+let jingleSrc=null, jingleEl=null;
+async function playClearJingle(){
+  stopClearJingle();
+  try{
+    if(!bufferCache["__clear"]){
+      const res=await fetch("songs/clear_jingle.mp3");
+      if(!res.ok)throw new Error("fetch failed");
+      bufferCache["__clear"]=await AC.decodeAudioData(await res.arrayBuffer());
+    }
+    if(state!=="result")return;
+    const g=AC.createGain();g.gain.value=.8;
+    jingleSrc=AC.createBufferSource();
+    jingleSrc.buffer=bufferCache["__clear"];
+    jingleSrc.connect(g);g.connect(masterGain);
+    jingleSrc.start();
+  }catch(e){
+    jingleEl=jingleEl||new Audio("songs/clear_jingle.mp3");
+    jingleEl.volume=.8;jingleEl.currentTime=0;
+    jingleEl.play().catch(()=>{});
+  }
+}
+function stopClearJingle(){
+  if(jingleSrc){try{jingleSrc.stop()}catch(e){} jingleSrc=null;}
+  if(jingleEl)jingleEl.pause();
+}
+
+/* ===== 試聴プレビュー ===== */
+let pvSource=null, pvGain=null, pvEl=null, pvToken=0, pvKey=null;
+async function startPreview(key){
+  if(state!=="title") return;
+  if(pvKey===key) return;
+  stopPreview();
+  pvKey=key;
+  const token=++pvToken;
+  markPreviewing(key,true);
+  initAudio();
+  if(AC.state==="suspended"){try{await AC.resume()}catch(e){}}
+  if(AC.state!=="running"){markPreviewing(key,false);pvKey=null;return;} // 未操作時は再生不可(ブラウザ仕様)
+  try{
+    const buf=await loadSong(key);
+    if(token!==pvToken) return;
+    pvGain=AC.createGain();
+    pvGain.gain.setValueAtTime(0,AC.currentTime);
+    pvGain.gain.linearRampToValueAtTime(.55,AC.currentTime+.25);
+    pvGain.connect(masterGain);
+    pvSource=AC.createBufferSource();
+    pvSource.buffer=buf;
+    pvSource.connect(pvGain);
+    const offset=Math.min(buf.duration*.3, Math.max(0,buf.duration-10));
+    pvSource.start(0,offset);
+    setTimeout(()=>{if(token===pvToken)stopPreview()},8000); // 8秒で自動停止
+  }catch(e){ // file:// フォールバック
+    if(token!==pvToken) return;
+    pvEl=pvEl||new Audio();
+    pvEl.src=SONGS[key].file;
+    pvEl.volume=.55;
+    pvEl.currentTime=0;
+    pvEl.play().catch(()=>{});
+    setTimeout(()=>{if(token===pvToken)stopPreview()},8000);
+  }
+}
+function stopPreview(){
+  pvToken++;
+  if(pvKey)markPreviewing(pvKey,false);
+  pvKey=null;
+  if(pvSource){
+    try{
+      pvGain.gain.linearRampToValueAtTime(0,AC.currentTime+.15);
+      const s=pvSource;setTimeout(()=>{try{s.stop()}catch(e){}},180);
+    }catch(e){}
+    pvSource=null;pvGain=null;
+  }
+  if(pvEl){pvEl.pause();}
+}
+function markPreviewing(key,on){
+  const b=document.querySelector(`.song[data-k="${key}"]`);
+  if(b)b.classList.toggle("previewing",on);
+}
+
+/* ===== レイアウト ===== */
+function resize(){
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  W=window.innerWidth;H=window.innerHeight;
+  cv.width=W*DPR;cv.height=H*DPR;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  const fieldW=Math.min(W*.92,520);
+  fieldL=(W-fieldW)/2;fieldR=fieldL+fieldW;
+  laneW=fieldW/4;
+  laneX=[0,1,2,3].map(i=>fieldL+laneW*i);
+  judgeY=H*.78;
+}
+window.addEventListener("resize",resize);resize();
+
+/* ===== タイトル装飾:浮遊音符 ===== */
+(function(){
+  const glyphs=["♪","♫","♩","♬"];
+  for(let i=0;i<7;i++){
+    const s=document.createElement("span");
+    s.className="float-note";
+    s.textContent=glyphs[i%4];
+    s.style.left=(6+i*13.5)+"vw";
+    s.style.animationDuration=(9+ (i*2.3)%7)+"s";
+    s.style.animationDelay=(-i*1.7)+"s";
+    s.style.color=["#3FB6E8","#E8402E","#F5C531","#7ED6A5"][i%4];
+    document.getElementById("scr-title").appendChild(s);
+  }
+})();
+
+/* ===== 選択UI ===== */
+const songRow=$("song-row");
+for(const [k,s] of Object.entries(SONGS)){
+  const b=document.createElement("button");
+  b.className="song"+(k===songKey?" sel":"");
+  b.dataset.k=k;
+  b.setAttribute("aria-label",s.name);
+  b.innerHTML=`<img class="s-btn" src="${s.btn}" alt="${s.name}">`;
+  b.addEventListener("click",()=>{
+    songRow.querySelectorAll(".song").forEach(x=>x.classList.remove("sel"));
+    b.classList.add("sel");songKey=k;
+    startPreview(k); // タップでも試聴(スマホ)
+  });
+  b.addEventListener("mouseenter",()=>startPreview(k));
+  b.addEventListener("mouseleave",()=>{if(pvKey===k)stopPreview();});
+  songRow.appendChild(b);
+}
+document.querySelectorAll(".diff").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll(".diff").forEach(x=>x.classList.remove("sel"));
+    b.classList.add("sel");diffKey=b.dataset.d;
+  });
+});
+
+/* 名前入力(ブラウザに保存) */
+{
+  const ni=$("player-name");
+  ni.value=store.getName();
+  ni.addEventListener("input",()=>store.setName(ni.value.trim().slice(0,8)));
+}
+
+let demoMode=false;
+$("btn-start").addEventListener("click",e=>{demoMode=!!e.shiftKey;startGame();});
+$("btn-retry").addEventListener("click",backToTitle);
+function backToTitle(){
+  stopClearJingle();
+  const cb=$("clear-bg");
+  if(cb)cb.pause();
+  $("scr-result").classList.add("hidden");
+  $("game").classList.add("hidden");
+  $("pause-overlay").classList.add("hidden");
+  $("stage-bg").pause();
+  $("scr-title").classList.remove("hidden");
+  document.body.className="bg-title";
+  state="title";
+}
+$("btn-share").addEventListener("click",()=>{
+  const rank=$("rank").textContent;
+  const text=`ペンペンビート!「${SONGS[songKey].name}」【${DIFF[diffKey].label}】SCORE ${score.toLocaleString()}(RANK ${rank})🐧🎵 ブラウザですぐ遊べる音ゲー、挑戦してみて!`;
+  const url=location.href.split("#")[0];
+  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,"_blank");
+});
+
+/* ===== ポーズ/中止 ===== */
+$("btn-quit").addEventListener("click",pauseGame);
+$("btn-resume").addEventListener("click",resumeGame);
+$("btn-giveup").addEventListener("click",()=>{
+  stopSong();
+  if(AC&&AC.state==="suspended")AC.resume();
+  cancelAnimationFrame(rafId);
+  backToTitle();
+});
+window.addEventListener("keydown",e=>{
+  if(e.code==="Escape"){
+    if(state==="play")pauseGame();
+    else if(state==="pause")resumeGame();
+  }
+});
+function pauseGame(){
+  if(state!=="play")return;
+  state="pause";
+  if(audioMode==="buffer")AC.suspend();
+  else if(el)el.pause();
+  $("stage-bg").pause();
+  $("pause-overlay").classList.remove("hidden");
+}
+function resumeGame(){
+  if(state!=="pause")return;
+  $("pause-overlay").classList.add("hidden");
+  if(audioMode==="buffer")AC.resume();
+  else if(el)el.play();
+  if($("game").classList.contains("video-mode"))$("stage-bg").play().catch(()=>{});
+  state="play";
+}
+
+/* ===== ゲーム開始 ===== */
+async function startGame(){
+  stopPreview();
+  initAudio();
+  if(AC.state==="suspended") await AC.resume();
+  const btn=$("btn-start"), ld=$("loading-note");
+  btn.disabled=true; ld.style.display="block";
+  let buf=null;
+  try{
+    buf=await loadSong(songKey);
+    audioMode="buffer";
+  }catch(e){
+    audioMode="element";
+    el=el||new Audio();
+    el.src=SONGS[songKey].file;
+    el.preload="auto";
+    await new Promise(r=>{el.oncanplaythrough=r; el.onerror=r; el.load();});
+  }
+  btn.disabled=false; ld.style.display="none";
+
+  document.body.className="bg-"+songKey;
+  theme=THEMES[songKey];
+  // ステージ背景ムービー(音声なし)。再生開始は曲スタートと同時
+  const STAGE_BG={lastboss:"boss_bg.mp4", town:"town_bg.mp4", medley:"battle_bg.mp4", theme:"adventure_bg.mp4"};
+  const stageBg=$("stage-bg");
+  if(STAGE_BG[songKey]){
+    const src=STAGE_BG[songKey];
+    if(!stageBg.src.endsWith(src)) stageBg.src=src;
+    $("game").classList.add("video-mode");
+    stageBg.pause();
+    stageBg.currentTime=0;
+  }else{
+    $("game").classList.remove("video-mode");
+    stageBg.pause();
+  }
+  $("scr-title").classList.add("hidden");
+  $("scr-result").classList.add("hidden");
+  $("game").classList.remove("hidden");
+  $("song-diff").textContent=`${SONGS[songKey].name} / ${DIFF[diffKey].label}`;
+
+  const meta=CHARTS[songKey];
+  songDur=meta.dur;
+  chart=meta.charts[diffKey];
+  speed=DIFF[diffKey].speed;
+  noteIdx=0;activeNotes=[];
+  score=0;combo=0;maxCombo=0;
+  counts={perfect:0,great:0,good:0,miss:0};
+  particles=[];laneFlash=[0,0,0,0];
+  updateScore();updateCombo();
+  setPenpen("idle");say("いくよ〜!");
+
+  state="count";
+  const cn=$("count-num");
+  let c=3;
+  const step=()=>{
+    if(state!=="count")return; // ポーズ画面から戻った等の保険
+    if(c>0){
+      cn.textContent=c;
+      cn.classList.remove("tick");void cn.offsetWidth;cn.classList.add("tick");
+      playTone(AC.currentTime,84,.15,"square",.25);
+      c--;setTimeout(step,900);
+    }else{
+      cn.textContent="";
+      playTone(AC.currentTime,96,.25,"square",.3);
+      if($("game").classList.contains("video-mode")){
+        $("stage-bg").currentTime=0;
+        $("stage-bg").play().catch(()=>{});
+      }
+      if(audioMode==="buffer"){
+        curSource=AC.createBufferSource();
+        curSource.buffer=buf;
+        curSource.connect(masterGain);
+        curSource.onended=()=>{if(state==="play")finishGame();};
+        songStartAC=AC.currentTime+.15;
+        curSource.start(songStartAC);
+      }else{
+        el.onended=()=>{if(state==="play")finishGame();};
+        el.currentTime=0;el.play();
+      }
+      state="play";
+    }
+  };
+  step();
+  cancelAnimationFrame(rafId);
+  loop();
+}
+
+/* ===== 判定 ===== */
+function hitLane(lane){
+  if(state!=="play")return;
+  laneFlash[lane]=1;
+  const now=songTime();
+  let best=-1,bestDiff=Infinity;
+  for(let i=0;i<activeNotes.length;i++){
+    const n=activeNotes[i];
+    if(n.lane!==lane||n.hit)continue;
+    const d=Math.abs(n.time-now);
+    if(d<bestDiff){bestDiff=d;best=i;}
+  }
+  if(best<0||bestDiff>JUDGE.good)return;
+  const n=activeNotes[best];n.hit=true;
+  const q=bestDiff<=JUDGE.perfect?"perfect":bestDiff<=JUDGE.great?"great":"good";
+  counts[q]++;combo++;
+  if(combo>maxCombo)maxCombo=combo;
+  score+=SCORE_VAL[q];
+  spawnParticles(lane,q);playHitSE(q);showJudge(q);
+  updateScore();updateCombo();reactPenpen();
+}
+function missNote(){
+  counts.miss++;combo=0;
+  updateCombo();showJudge("miss");
+  setPenpenTemp("miss",600);
+  if(counts.miss%4===1)say(["あわわ…","ドンマイ!","つぎつぎ!"][Math.floor(Math.random()*3)]);
+}
+function showJudge(q){
+  const e=$("judge-pop");
+  e.className="";e.classList.add("j-"+q);
+  e.textContent=q==="perfect"?"PERFECT!":q==="great"?"GREAT!":q==="good"?"GOOD":"MISS…";
+  void e.offsetWidth;e.classList.add("show");
+}
+function updateScore(){$("score").textContent=score.toLocaleString()}
+function updateCombo(){
+  $("combo-num").textContent=combo;
+  $("combo-view").style.opacity=combo>=3?1:0;
+}
+
+/* ===== ペンペン反応 ===== */
+const wrap=$("penpen-wrap");
+function setPenpen(m){wrap.className="p-"+m}
+function setPenpenTemp(m,ms){
+  setPenpen(m);clearTimeout(penpenTimer);
+  penpenTimer=setTimeout(reactPenpen,ms);
+}
+function reactPenpen(){
+  if(combo>=30)setPenpen("fever");
+  else if(combo>=8)setPenpen("happy");
+  else setPenpen("idle");
+  if(combo===10)say("いいね!");
+  else if(combo===25)say("ノリノリ〜!");
+  else if(combo===50)say("サイコー!!");
+  else if(combo===100)say("しんじられない!!");
+}
+function say(t){
+  const b=$("bubble");
+  b.textContent=t;b.classList.add("show");
+  clearTimeout(bubbleTimer);
+  bubbleTimer=setTimeout(()=>b.classList.remove("show"),1400);
+}
+
+/* ===== パーティクル ===== */
+function spawnParticles(lane,q){
+  const x=laneX[lane]+laneW/2,y=judgeY;
+  const n=q==="perfect"?14:q==="great"?9:5;
+  for(let i=0;i<n;i++){
+    const a=Math.random()*Math.PI*2,s=2+Math.random()*4;
+    particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-2,life:1,
+      c:q==="perfect"?"#F5C531":LANE_COLORS[lane],r:3+Math.random()*3});
+  }
+}
+
+/* ===== 入力 ===== */
+window.addEventListener("keydown",e=>{
+  const i=KEYS.indexOf(e.code);
+  if(i>=0){e.preventDefault();hitLane(i);}
+});
+cv.addEventListener("touchstart",e=>{
+  e.preventDefault();
+  for(const t of e.changedTouches){
+    if(t.clientX<fieldL||t.clientX>fieldR)continue;
+    hitLane(Math.min(3,Math.max(0,Math.floor((t.clientX-fieldL)/laneW))));
+  }
+},{passive:false});
+cv.addEventListener("mousedown",e=>{
+  if(e.clientX<fieldL||e.clientX>fieldR)return;
+  hitLane(Math.min(3,Math.max(0,Math.floor((e.clientX-fieldL)/laneW))));
+});
+
+/* ===== メインループ ===== */
+function loop(){
+  rafId=requestAnimationFrame(loop);
+  ctx.clearRect(0,0,W,H);
+  drawField();
+  if(state==="pause"){drawParticles();return;}
+  if(state!=="play"){drawParticles();return;}
+  const now=songTime();
+  const travel=(judgeY+80)/(speed*H);
+  while(noteIdx<chart.length&&chart[noteIdx][0]<now+travel+.5){
+    const c=chart[noteIdx++];
+    activeNotes.push({time:c[0],lane:c[1],hit:false,missed:false});
+  }
+  for(const n of activeNotes){
+    if(n.hit||n.missed)continue;
+    const dt=n.time-now;
+    if(demoMode&&dt<=0.012&&dt>-0.05){hitLane(n.lane);continue;}
+    if(dt<-JUDGE.good){n.missed=true;missNote();continue;}
+    drawNote(n.lane,judgeY-dt*speed*H);
+  }
+  activeNotes=activeNotes.filter(n=>(!n.hit&&!n.missed)||(n.time-now)>-1);
+  drawParticles();
+  $("progress").style.width=Math.min(100,now/songDur*100)+"%";
+  if(now>songDur+2&&noteIdx>=chart.length)finishGame();
+}
+function drawField(){
+  ctx.fillStyle=theme.field;
+  ctx.fillRect(fieldL-6,0,(fieldR-fieldL)+12,H);
+  for(let i=0;i<4;i++){
+    if(laneFlash[i]>0){
+      ctx.fillStyle=hexA(LANE_COLORS[i],laneFlash[i]*.28);
+      ctx.fillRect(laneX[i],0,laneW,H);
+      laneFlash[i]=Math.max(0,laneFlash[i]-.08);
+    }
+    ctx.strokeStyle=theme.line;ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(laneX[i],0);ctx.lineTo(laneX[i],H);ctx.stroke();
+  }
+  ctx.beginPath();ctx.moveTo(fieldR,0);ctx.lineTo(fieldR,H);ctx.stroke();
+  ctx.fillStyle=theme.line;
+  ctx.fillRect(fieldL-6,judgeY-4,(fieldR-fieldL)+12,8);
+  for(let i=0;i<4;i++){
+    const cx=laneX[i]+laneW/2;
+    ctx.strokeStyle=LANE_COLORS[i];ctx.lineWidth=3.5;
+    ctx.beginPath();ctx.arc(cx,judgeY,Math.min(laneW*.34,30),0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle=theme.label;
+    ctx.font="800 13px sans-serif";ctx.textAlign="center";
+    ctx.fillText(KEY_LABELS[i],cx,judgeY+Math.min(laneW*.34,30)+18);
+  }
+}
+function drawNote(lane,y){
+  const cx=laneX[lane]+laneW/2,r=Math.min(laneW*.32,28);
+  ctx.fillStyle="rgba(51,70,90,.15)";
+  ctx.beginPath();ctx.ellipse(cx,y+r*.55,r*.9,r*.35,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=LANE_COLORS[lane];
+  ctx.beginPath();ctx.arc(cx,y,r,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="rgba(255,255,255,.65)";
+  ctx.beginPath();ctx.arc(cx-r*.3,y-r*.3,r*.28,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle="rgba(255,255,255,.9)";ctx.lineWidth=3;
+  ctx.beginPath();ctx.arc(cx,y,r-2,0,Math.PI*2);ctx.stroke();
+}
+function drawParticles(){
+  for(const p of particles){
+    p.x+=p.vx;p.y+=p.vy;p.vy+=.25;p.life-=.03;
+    if(p.life<=0)continue;
+    ctx.globalAlpha=Math.max(0,p.life);
+    ctx.fillStyle=p.c;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.r*p.life,0,Math.PI*2);ctx.fill();
+  }
+  ctx.globalAlpha=1;
+  particles=particles.filter(p=>p.life>0);
+}
+function hexA(hex,a){
+  const n=parseInt(hex.slice(1),16);
+  return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`;
+}
+
+/* ===== リザルト ===== */
+function finishGame(){
+  state="result";
+  stopSong();
+  $("stage-bg").pause();
+  cancelAnimationFrame(rafId);
+  const max=chart.length*SCORE_VAL.perfect;
+  const rate=max>0?score/max:0;
+  const rank=rate>=.95?"S":rate>=.85?"A":rate>=.7?"B":"C";
+  $("rank").textContent=rank;$("rank").className="r-"+rank;
+  $("result-song").textContent=`${SONGS[songKey].name} / ${DIFF[diffKey].label}`;
+  $("result-score").textContent=score.toLocaleString();
+  $("result-msg").textContent=
+    rank==="S"?"かんぺき!ペンペンも大よろこび!!":
+    rank==="A"?"すごい!あと少しでパーフェクト!":
+    rank==="B"?"いいかんじ!リズムつかめてきた!":
+    "まずは★1でウォームアップしよ!";
+  $("st-p").textContent=counts.perfect;
+  $("st-g").textContent=counts.great;
+  $("st-o").textContent=counts.good;
+  $("st-m").textContent=counts.miss;
+  $("st-c").textContent=maxCombo;
+  // スコア記録+ランキング表示(デモプレイは記録しない)
+  const nr=$("new-record");
+  if(demoMode){
+    nr.style.display="none";
+    renderTop3(songKey,diffKey,null);
+  }else{
+    const entry={n:playerName(), s:score, r:rank, d:Date.now()};
+    const pos=recordScore(songKey,diffKey,entry);
+    if(pos>=0&&pos<3){
+      nr.textContent=pos===0?"🏆 1位にランクイン!":`🏅 ${pos+1}位にランクイン!`;
+      nr.style.display="inline-block";
+    }else{
+      nr.style.display="none";
+    }
+    renderTop3(songKey,diffKey,entry);
+  }
+  $("game").classList.add("hidden");
+  $("scr-result").classList.remove("hidden");
+  const cb=$("clear-bg");
+  if(cb){cb.currentTime=0;cb.play().catch(()=>{});}
+  playClearJingle();
+}
+</script>
+</body>
+</html>
